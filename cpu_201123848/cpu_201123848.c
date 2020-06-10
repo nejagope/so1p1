@@ -22,7 +22,9 @@ void imprimirInfo(void)
 
 int init_module(void)
 {
-	printk(KERN_INFO "Mairo Alvarado\n");
+	printk(KERN_INFO "Mairo Alvarado - 201123848\n");
+	printk(KERN_INFO "Nelson Gonzalez - 200412956\n");
+	
 	imprimirInfo();
 	return 0;
 }
