@@ -7,4 +7,4 @@ test:
 	dmesg -C
 	insmod cpu_201123848.ko
 	rmmod cpu_201123848.ko
- 	dmesg
+	dmesg
