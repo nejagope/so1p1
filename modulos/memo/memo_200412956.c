@@ -25,7 +25,7 @@ static int memo_proc_show(struct seq_file *m, void *v) {
 	used_ram = ((total_ram - free_ram)* 100)/total_ram ;
 
 	//se escribe el archivo
-	seq_printf(m, "Carnets: 200412956 200000000\nNombres:Nelson Gonzalez, Mario\nCantidad total de memoria: %ld bytes\nCantidad de memoria disponible: %ld bytes\nMemoria utilizada: %d por ciento\n", total_ram, free_ram, used_ram);
+	seq_printf(m, "Carnets: 200412956 201123848\nNombres:Nelson Gonzalez, Mario Alvarado\nCantidad total de memoria: %ld bytes\nCantidad de memoria disponible: %ld bytes\nMemoria utilizada: %d por ciento\n", total_ram, free_ram, used_ram);
 	return 0;
 }
 
@@ -44,7 +44,7 @@ static struct file_operations memo_proc_fops = {
 
 static int memo_init(void){
 	//Mostrar carnets
-	printk(KERN_ALERT "Carnets: 200412956 20000000\n");
+	printk(KERN_ALERT "Carnets: 200412956 201123848\n");
 	
 	//Create proc file	
 	proc_create("memo_200412956", 0, NULL, &memo_proc_fops);
