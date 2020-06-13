@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+//ProcsInfo representa la sumatoria de procesos del so por estado
+type ProcsInfo struct {
+	Runing   int
+	Sleeping int
+	Stoped   int
+	Zombie   int
+	Other    int
+	Total    int
+}
+
 //ProcInfo Representa el estado de un proceso del so
 type ProcInfo struct {
 	Pid                       int
@@ -41,12 +51,53 @@ type CPUInfo struct {
 	Used float64
 }
 
+//función main
 func main() {
 	http.HandleFunc("/memo", memoHandler)
 	http.HandleFunc("/cpu", cpuHandler)
 	http.HandleFunc("/proc", procHandler)
 	http.HandleFunc("/procs", procsHandler)
+	http.HandleFunc("/procsinfo", procsInfoHandler)
 	http.ListenAndServe(":8080", nil)
+}
+
+//request handlers
+func procsInfoHandler(w http.ResponseWriter, r *http.Request) {
+
+	procs, err := GetProcsInfo()
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var procsInfo ProcsInfo
+
+	for _, proc := range procs {
+		procsInfo.Total++
+
+		switch proc.EstadoID {
+		case "R":
+			procsInfo.Runing++
+		case "S":
+			procsInfo.Sleeping++
+		case "Z":
+			procsInfo.Zombie++
+		case "T":
+			procsInfo.Stoped++
+		default:
+			procsInfo.Other++
+		}
+	}
+
+	js, err := json.Marshal(procsInfo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
 
 func procsHandler(w http.ResponseWriter, r *http.Request) {
@@ -132,6 +183,8 @@ func cpuHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
 }
+
+//Util functions
 
 func getCPUSample() (idle, total uint64) {
 	contents, err := ioutil.ReadFile("/proc/stat")
