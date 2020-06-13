@@ -7,11 +7,23 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
+
+//ProcInfo Representa el estado de un proceso del so
+type ProcInfo struct {
+	Pid                       int
+	Nombre                    string
+	Usuario                   string
+	EstadoID                  string
+	Estado                    string
+	MemoriaUtiliada           uint64
+	PorcentajeMemoriaUtiliada float64
+}
 
 //MemoInfo Representa el estado de la memoria RAM
 type MemoInfo struct {
@@ -32,7 +44,49 @@ type CPUInfo struct {
 func main() {
 	http.HandleFunc("/memo", memoHandler)
 	http.HandleFunc("/cpu", cpuHandler)
+	http.HandleFunc("/proc", procHandler)
+	http.HandleFunc("/procs", procsHandler)
 	http.ListenAndServe(":8080", nil)
+}
+
+func procsHandler(w http.ResponseWriter, r *http.Request) {
+
+	procs, err := GetProcsInfo()
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	js, err := json.Marshal(procs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
+func procHandler(w http.ResponseWriter, r *http.Request) {
+	keys, _ := r.URL.Query()["pid"]
+	pid, _ := strconv.Atoi(keys[0])
+	var procInfo ProcInfo
+	err := GetProcInfo(&procInfo, pid)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	js, err := json.Marshal(procInfo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
 
 func memoHandler(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +159,7 @@ func getCPUSample() (idle, total uint64) {
 	return
 }
 
-//GetMemInfo Updates s with current values, usign the pid stored in the Stat
+//GetMemInfo obtiene el estado de la memoria RAM
 func GetMemInfo(m *MemoInfo) error {
 	var err error
 
@@ -143,6 +197,114 @@ func GetMemInfo(m *MemoInfo) error {
 		}
 
 	}
+
+	return nil
+
+}
+
+//GetProcsInfo obtiene el estado de los procesos del SO
+func GetProcsInfo() ([]ProcInfo, error) {
+	//información del estado de la memoria
+	var memoInfo MemoInfo
+	err := GetMemInfo(&memoInfo)
+
+	if err != nil {
+		return nil, err
+	}
+
+	//listado de procesos que se retornará
+	var procs []ProcInfo
+
+	directory := "/proc/"
+
+	// abrir directorio
+	outputDirRead, err := os.Open(directory)
+
+	// obtener contenido del directorio
+	outputDirFiles, err := outputDirRead.Readdir(0)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// iterar sobre el contenido del directorio
+	for outputIndex := range outputDirFiles {
+		info := outputDirFiles[outputIndex]
+
+		if info.IsDir() {
+			pid, err := strconv.Atoi(info.Name())
+
+			if err == nil {
+				var proc ProcInfo
+				errGet := GetProcInfo(&proc, pid)
+
+				if errGet == nil {
+					proc.PorcentajeMemoriaUtiliada = float64(proc.MemoriaUtiliada) / float64(memoInfo.AvailableKb)
+					procs = append(procs, proc)
+				}
+			}
+		}
+	}
+
+	return procs, nil
+}
+
+/*
+type ProcInfo struct {
+	Pid             int
+	Nombre          string
+	Usuario         string
+	EstadoID        string
+	Estado          string
+	MemoriaUtiliada uint64
+}
+*/
+
+//GetProcInfo obtiene el estado de un proceso del SO
+func GetProcInfo(p *ProcInfo, pid int) error {
+	p.Pid = pid
+
+	var err error
+
+	path := filepath.Join("/proc/" + strconv.Itoa(pid) + "/status")
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		text := scanner.Text()
+
+		n := strings.Index(text, ":")
+
+		key := text[:n] // metric
+
+		if key == "Name" {
+			p.Nombre = strings.TrimSpace(text[(n + 1):])
+
+		} else if key == "State" {
+			data := strings.Split(strings.TrimSpace(text[(n+1):]), " ")
+			p.EstadoID = data[0]
+			p.Estado = data[1]
+
+		} else if key == "VmRSS" {
+			data := strings.Split(strings.TrimSpace(text[(n+1):]), " ")
+			value, err := strconv.ParseUint(data[0], 10, 64)
+
+			if err != nil {
+				return nil
+			}
+
+			p.MemoriaUtiliada = value
+		}
+
+	}
+
+	out, err := exec.Command("ps", "-o", "user=", "-p", strconv.Itoa(pid)).Output()
+	p.Usuario = strings.TrimSpace(string(out))
+
 	return nil
 
 }
