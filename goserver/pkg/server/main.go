@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -58,9 +59,14 @@ func main() {
 	http.HandleFunc("/proc", procHandler)
 	http.HandleFunc("/procs", procsHandler)
 	http.HandleFunc("/procsinfo", procsInfoHandler)
-	http.HandleFunc("/killproc", killProcHandler)
-	fmt.Print("Escuchando en el puerto 8080")
-	http.ListenAndServe(":8080", nil)
+  http.HandleFunc("/killproc", killProcHandler)
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/", fs)
+	log.Println("Listening on :8080...")
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 //request handlers
