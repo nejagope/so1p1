@@ -23,11 +23,11 @@ const config = {
   styleUrls: ['./app.component.css'],
 })
 export class AppComponent {
-  urlProcs = config.dev.base + 'procs';
-  urlCPU = config.dev.base + 'cpu';
-  urlMEMO = config.dev.base + 'memo';
-  urlProcsInfo = config.dev.base + 'procsinfo';
-  urlKill = config.dev.base + 'killproc';
+  urlProcs = config.prod.base + 'procs';
+  urlCPU = config.prod.base + 'cpu';
+  urlMEMO = config.prod.base + 'memo';
+  urlProcsInfo = config.prod.base + 'procsinfo';
+  urlKill = config.prod.base + 'killproc';
 
 
   procesos: string[] = [];
