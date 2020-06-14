@@ -63,6 +63,7 @@ func main() {
 
 //request handlers
 func procsInfoHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 
 	procs, err := GetProcsInfo()
 
@@ -101,6 +102,7 @@ func procsInfoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func procsHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 
 	procs, err := GetProcsInfo()
 
@@ -120,6 +122,8 @@ func procsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func procHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	keys, _ := r.URL.Query()["pid"]
 	pid, _ := strconv.Atoi(keys[0])
 	var procInfo ProcInfo
@@ -141,6 +145,8 @@ func procHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func memoHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	var memoInfo MemoInfo
 	err := GetMemInfo(&memoInfo)
 
@@ -165,6 +171,8 @@ func memoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func cpuHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	idle0, total0 := getCPUSample()
 	time.Sleep(1 * time.Second)
 	idle1, total1 := getCPUSample()
@@ -360,4 +368,8 @@ func GetProcInfo(p *ProcInfo, pid int) error {
 
 	return nil
 
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
