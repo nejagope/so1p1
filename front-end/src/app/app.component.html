@@ -379,6 +379,7 @@
         <th>Pid</th>
         <th>Porcentaje de Memoria Utilizada</th>
         <th>Usuario</th>
+        <th></th>
       </tr>
     </thead>
     <tbody>
@@ -391,6 +392,12 @@
         <td>{{ proceso.Pid }}</td>
         <td>{{ proceso.PorcentajeMemoriaUtiliada*100 }} %</td>
         <td>{{ proceso.Usuario }}</td>
+        <td>
+          <button id="{{proceso.Pid}}" type="button" class="btn btn-primary btn-lg btn-block" (click)="onClickKill($event)">
+            KILL
+          </button>
+        </td>
+
       </tr>
     </tbody>
   </table>
@@ -402,6 +409,7 @@
         <th>Suspendidos</th>
         <th>Detenidos</th>
         <th>Zombies</th>
+        <th>Otro</th>
         <th>Total</th>
       </tr>
     </thead>
@@ -411,6 +419,7 @@
         <td>{{ suspendido }}</td>
         <td>{{ detenido }}</td>
         <td>{{ zombie }}</td>
+        <td>{{ otro }}</td>
         <td>{{ total }}</td>
       </tr>
     </tbody>
