@@ -11,6 +11,7 @@ Métodos disponibles en la api
 /proc
 /procs
 /procsinfo
+/killproc
 
 Descripción de los métodos
 Todos los métodos son de tipo GET
@@ -34,3 +35,7 @@ No requiere parámetros
 /procsinfo
 Conteo de procesos en estado running, sleeping, stoped, zombie y otros estados
 No requiere parámetros
+
+/killproc
+Mata a un proceso segun su pid. retorna lo mismo que el método /proc
+Requiere el parámetro pid de tipo entero

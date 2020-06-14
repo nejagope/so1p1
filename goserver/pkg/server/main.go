@@ -58,10 +58,43 @@ func main() {
 	http.HandleFunc("/proc", procHandler)
 	http.HandleFunc("/procs", procsHandler)
 	http.HandleFunc("/procsinfo", procsInfoHandler)
+	http.HandleFunc("/killproc", killProcHandler)
+	fmt.Print("Escuchando en el puerto 8080")
 	http.ListenAndServe(":8080", nil)
 }
 
 //request handlers
+
+func killProcHandler(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
+	keys, _ := r.URL.Query()["pid"]
+	pid, _ := strconv.Atoi(keys[0])
+	var procInfo ProcInfo
+	err := GetProcInfo(&procInfo, pid)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	_, errCmd := exec.Command("kill", strconv.Itoa(pid)).Output()
+
+	if errCmd != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	js, err := json.Marshal(procInfo)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
 func procsInfoHandler(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
