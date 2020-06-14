@@ -59,7 +59,7 @@ func main() {
 	http.HandleFunc("/proc", procHandler)
 	http.HandleFunc("/procs", procsHandler)
 	http.HandleFunc("/procsinfo", procsInfoHandler)
-  http.HandleFunc("/killproc", killProcHandler)
+	http.HandleFunc("/killproc", killProcHandler)
 	fs := http.FileServer(http.Dir("./static"))
 	http.Handle("/", fs)
 	log.Println("Listening on :8080...")
@@ -101,10 +101,20 @@ func killProcHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
+var gettingProcsInfo bool = false
+var cachedProcsInfo []ProcInfo
+
 func procsInfoHandler(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
-
-	procs, err := GetProcsInfo()
+	var procs []ProcInfo
+	var err error
+	if gettingProcsInfo {
+		procs = cachedProcsInfo
+		err = nil
+	} else {
+		procs, err = GetProcsInfo()
+		cachedProcsInfo = procs
+	}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -143,7 +153,15 @@ func procsInfoHandler(w http.ResponseWriter, r *http.Request) {
 func procsHandler(w http.ResponseWriter, r *http.Request) {
 	enableCors(&w)
 
-	procs, err := GetProcsInfo()
+	var procs []ProcInfo
+	var err error
+	if gettingProcsInfo {
+		procs = cachedProcsInfo
+		err = nil
+	} else {
+		procs, err = GetProcsInfo()
+		cachedProcsInfo = procs
+	}
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -304,11 +322,13 @@ func GetMemInfo(m *MemoInfo) error {
 
 //GetProcsInfo obtiene el estado de los procesos del SO
 func GetProcsInfo() ([]ProcInfo, error) {
+	gettingProcsInfo = true
 	//información del estado de la memoria
 	var memoInfo MemoInfo
 	err := GetMemInfo(&memoInfo)
 
 	if err != nil {
+		gettingProcsInfo = false
 		return nil, err
 	}
 
@@ -324,6 +344,7 @@ func GetProcsInfo() ([]ProcInfo, error) {
 	outputDirFiles, err := outputDirRead.Readdir(0)
 
 	if err != nil {
+		gettingProcsInfo = false
 		return nil, err
 	}
 
@@ -345,7 +366,7 @@ func GetProcsInfo() ([]ProcInfo, error) {
 			}
 		}
 	}
-
+	gettingProcsInfo = false
 	return procs, nil
 }
 
