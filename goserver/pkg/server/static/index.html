@@ -6,8 +6,183 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- jQuery library -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  
+  <!-- chart.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.js"></script>
 <link rel="stylesheet" href="styles.3ff695c00d717f2d2a11.css"></head>
 <body>
   <app-root></app-root>
 <script src="runtime-es2015.1eba213af0b233498d9d.js" type="module"></script><script src="runtime-es5.1eba213af0b233498d9d.js" nomodule defer></script><script src="polyfills-es5.9e286f6d9247438cbb02.js" nomodule defer></script><script src="polyfills-es2015.690002c25ea8557bb4b0.js" type="module"></script><script src="main-es2015.c8577e1ccbfc8ab9fdf1.js" type="module"></script><script src="main-es5.c8577e1ccbfc8ab9fdf1.js" nomodule defer></script></body>
+
+<table>
+  <tr>
+    <td>
+      <canvas id="cpuChart" width="600px" height="400"></canvas>
+    </td>
+
+    <td>
+      <canvas id="memoChart" width="600px" height="400"></canvas>
+    </td>
+  </tr>
+</table>
+
+<script>
+  window.onload = function () {     
+    var ctxCpuChart = document.getElementById('cpuChart');
+    var cpuChart = new Chart(ctxCpuChart, {
+      type: 'line',
+      
+      data: {        
+        labels: [],
+				datasets: [{
+					label: 'Uso',
+					backgroundColor: "#CCCCCC",
+					borderColor: "#000000",
+					data: [],
+					fill: false,
+				}]
+      },
+      
+      options: {
+				responsive: false,
+				title: {
+					display: true,
+					text: 'Uso de CPU'
+				},
+				tooltips: {
+					mode: 'index',
+					intersect: false,
+				},
+				hover: {
+					mode: 'nearest',
+					intersect: true
+				},
+				scales: {
+					xAxes: [{
+						display: false,						
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'Uso (%)'
+            },
+            ticks: {
+                max: 100,
+                min: 0,
+                stepSize: 10
+            }
+					}]
+				}
+			},		
+ 
+    });
+
+    var ctxMemoChart = document.getElementById('memoChart');
+    var memoChart = new Chart(ctxMemoChart, {
+      type: 'line',
+      
+      data: {        
+        labels: [],
+				datasets: [{
+					label: 'Uso',
+					backgroundColor: "#CCCCC",
+					borderColor: "#000000",
+					data: [],
+					fill: false,
+				}]
+      },
+      
+      options: {
+				responsive: false,
+				title: {
+					display: true,
+					text: 'Uso de Memoria RAM'
+				},
+				tooltips: {
+					mode: 'index',
+					intersect: false,
+				},
+				hover: {
+					mode: 'nearest',
+					intersect: true
+				},
+				scales: {
+					xAxes: [{
+						display: false,						
+					}],
+					yAxes: [{
+						display: true,
+						scaleLabel: {
+							display: true,
+							labelString: 'Uso (%)'
+            },
+            
+            ticks: {
+                max: 100,
+                min: 0,
+                stepSize: 10
+            }
+					}]
+				}
+			},		
+ 
+    });
+
+
+    var i = 0
+    setInterval(function(){ 
+      i++      
+      $.ajax({
+        url: "/cpu",
+        type: "GET",	        
+		    success: function(r) { 
+          //console.log(r); 
+          try{
+            var nuevodato = (100 * r.Used).toFixed(2);
+            //console.log(nuevodato);
+            removeData(cpuChart);
+            addData(cpuChart, i, nuevodato);
+            cpuChart.update();
+          }catch(e){}
+        }
+      });      
+
+      $.ajax({
+        url: "/memo",
+        type: "GET",	        
+		    success: function(r) { 
+          //console.log(r); 
+          try{
+            var nuevodato = (100.0 * r.UsedKb / r.TotalKb).toFixed(2);
+            //console.log(nuevodato);
+            removeData(memoChart);
+            addData(memoChart, i, nuevodato);
+            memoChart.update();
+          }catch(e){}
+        }
+      });      
+    }, 3000);
+  }
+
+  function addData(chart, label, value) {
+    chart.data.labels.push(label);
+    chart.data.datasets.forEach((dataset) => {
+        dataset.data.push(value);
+    });    
+  }
+
+  function removeData(chart) {      
+      if (chart.data.labels.length == 20)
+        chart.data.labels.shift()
+      
+      chart.data.datasets.forEach((dataset) => {
+          if (dataset.data.length == 20)
+            dataset.data.shift();
+      });      
+  }
+
+</script>
 </html>
