@@ -49,5 +49,6 @@ int init_module(void)
 
 void cleanup_module(void)
 {
+	remove_proc_entry("cpu_201123848", NULL);
 	printk(KERN_INFO "Sistemas Operativos 1\n");
 }
